@@ -23,6 +23,7 @@
  */
 package com.eliasnogueira.paymentservice.integration;
 
+import com.eliasnogueira.paymentservice.data.PaymentDataFactory;
 import com.eliasnogueira.paymentservice.dto.PaymentRequest;
 import com.eliasnogueira.paymentservice.dto.PaymentResponse;
 import com.eliasnogueira.paymentservice.dto.PaymentUpdateRequest;
@@ -75,11 +76,7 @@ class PaymentIntegrationTest {
     @Test
     @DisplayName("Should create a new payment and return 201 Created")
     void createPayment() throws Exception {
-        var paymentRequest = PaymentRequest.builder()
-                .payerId(UUID.randomUUID())
-                .paymentSource(PaymentSource.PIX)
-                .amount(BigDecimal.valueOf(100.50))
-                .build();
+        var paymentRequest = PaymentDataFactory.validPayment();
 
         var responseInJson = mockMvc.perform(post("/api/payments")
                         .contentType(APPLICATION_JSON)
@@ -101,9 +98,7 @@ class PaymentIntegrationTest {
     @Test
     @DisplayName("Should find a payment by ID and return 200 OK")
     void getPayment() throws Exception {
-        var payment = Payment.builder().payerId(UUID.randomUUID())
-                .paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(200.75)).status(PENDING).build();
+        var payment = PaymentDataFactory.validPayment();
 
         var savedPayment = paymentRepository.save(payment);
 
@@ -126,11 +121,9 @@ class PaymentIntegrationTest {
     void getAllPayments() throws Exception {
         UUID payerId = UUID.randomUUID();
 
-        var firstPayment = Payment.builder().payerId(payerId).paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(100.00)).status(PENDING).build();
+        var firstPayment = PaymentDataFactory.validPaymentWithAPayer(payerId);
 
-        var secondPayment = Payment.builder().payerId(payerId).paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(200.00)).status(PENDING).build();
+        var secondPayment = PaymentDataFactory.validPaymentWithAPayer(payerId);
 
         paymentRepository.saveAll(List.of(firstPayment, secondPayment));
 
@@ -145,13 +138,13 @@ class PaymentIntegrationTest {
         assertThat(listOfPaymentResponse).hasSize(2);
         assertThat(listOfPaymentResponse.get(0).getId()).isNotNull();
         assertThat(listOfPaymentResponse.get(0).getPayerId()).isEqualTo(payerId);
-        assertThat(listOfPaymentResponse.get(0).getPaymentSource()).isEqualTo(PaymentSource.CREDIT_CARD);
-        assertThat(listOfPaymentResponse.get(0).getAmount()).isEqualTo(new BigDecimal("100.00"));
+        assertThat(listOfPaymentResponse.get(0).getPaymentSource()).isEqualTo(firstPayment.getPaymentSource());
+        assertThat(listOfPaymentResponse.get(0).getAmount()).isEqualTo(firstPayment.getAmount());
         assertThat(listOfPaymentResponse.get(0).getStatus()).isEqualTo(PENDING);
         assertThat(listOfPaymentResponse.get(1).getId()).isNotNull();
         assertThat(listOfPaymentResponse.get(1).getPayerId()).isEqualTo(payerId);
-        assertThat(listOfPaymentResponse.get(1).getPaymentSource()).isEqualTo(PaymentSource.CREDIT_CARD);
-        assertThat(listOfPaymentResponse.get(1).getAmount()).isEqualTo(new BigDecimal("200.00"));
+        assertThat(listOfPaymentResponse.get(1).getPaymentSource()).isEqualTo(secondPayment.getPaymentSource());
+        assertThat(listOfPaymentResponse.get(1).getAmount()).isEqualTo(secondPayment.getAmount());
         assertThat(listOfPaymentResponse.get(1).getStatus()).isEqualTo(PENDING);
     }
 
@@ -160,11 +153,9 @@ class PaymentIntegrationTest {
     void getPaymentsByPayerId() throws Exception {
         UUID payerId = UUID.randomUUID();
 
-        var firstPayment = Payment.builder().payerId(payerId).paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(100.00)).status(PENDING).build();
+        var firstPayment = PaymentDataFactory.validPaymentWithAPayer(payerId);
 
-        var secondPayment = Payment.builder().payerId(payerId).paymentSource(PaymentSource.PIX)
-                .amount(BigDecimal.valueOf(200.00)).status(PENDING).build();
+        var secondPayment = PaymentDataFactory.validPaymentWithAPayer(payerId);
 
         paymentRepository.saveAll(List.of(firstPayment, secondPayment));
 
@@ -179,13 +170,13 @@ class PaymentIntegrationTest {
         assertThat(listOfPaymentResponse).hasSize(2);
         assertThat(listOfPaymentResponse.get(0).getId()).isNotNull();
         assertThat(listOfPaymentResponse.get(0).getPayerId()).isEqualTo(payerId);
-        assertThat(listOfPaymentResponse.get(0).getPaymentSource()).isEqualTo(PaymentSource.CREDIT_CARD);
-        assertThat(listOfPaymentResponse.get(0).getAmount()).isEqualTo(new BigDecimal("100.00"));
+        assertThat(listOfPaymentResponse.get(0).getPaymentSource()).isEqualTo(firstPayment.getPaymentSource());
+        assertThat(listOfPaymentResponse.get(0).getAmount()).isEqualTo(firstPayment.getAmount());
         assertThat(listOfPaymentResponse.get(0).getStatus()).isEqualTo(PENDING);
         assertThat(listOfPaymentResponse.get(1).getId()).isNotNull();
         assertThat(listOfPaymentResponse.get(1).getPayerId()).isEqualTo(payerId);
-        assertThat(listOfPaymentResponse.get(1).getPaymentSource()).isEqualTo(PaymentSource.PIX);
-        assertThat(listOfPaymentResponse.get(1).getAmount()).isEqualTo(new BigDecimal("200.00"));
+        assertThat(listOfPaymentResponse.get(1).getPaymentSource()).isEqualTo(secondPayment.getPaymentSource());
+        assertThat(listOfPaymentResponse.get(1).getAmount()).isEqualTo(secondPayment.getAmount());
     }
 
     @Test
@@ -193,8 +184,7 @@ class PaymentIntegrationTest {
     void updatePayment() throws Exception {
         var paymentUpdateRequest = PaymentUpdateRequest.builder().status(PAID).build();
 
-        var payment = Payment.builder().payerId(UUID.randomUUID()).paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(300.00)).status(PENDING).build();
+        var payment = PaymentDataFactory.validPaymentWithAPayer(UUID.randomUUID());
 
         var savedPayment = paymentRepository.save(payment);
 

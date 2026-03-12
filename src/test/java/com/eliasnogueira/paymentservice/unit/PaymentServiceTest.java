@@ -1,5 +1,6 @@
 package com.eliasnogueira.paymentservice.unit;
 
+import com.eliasnogueira.paymentservice.PaymentDataFactory;
 import com.eliasnogueira.paymentservice.dto.PaymentRequest;
 import com.eliasnogueira.paymentservice.exceptions.PaymentLimitException;
 import com.eliasnogueira.paymentservice.model.enums.PaymentSource;
@@ -39,10 +40,7 @@ class PaymentServiceTest {
         when(paymentRepository.save(any()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var paymentRequest = PaymentRequest.builder()
-                .payerId(UUID.randomUUID())
-                .paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(200.00)).build();
+        var paymentRequest = PaymentDataFactory.validPaymentRequest();
 
         var savedPayment = paymentService.createPayment(paymentRequest);
 
@@ -56,8 +54,7 @@ class PaymentServiceTest {
         when(paymentRepository.sumPaymentsByPayerIdAndDate(any(), any(), any()))
                 .thenReturn(new BigDecimal("8000.00"));
 
-        var paymentRequest = PaymentRequest.builder().payerId(UUID.randomUUID()).paymentSource(PaymentSource.CREDIT_CARD)
-                .amount(BigDecimal.valueOf(2100.00)).build();
+        var paymentRequest = PaymentDataFactory.invalidPaymentRequest();
 
         assertThatThrownBy(() -> paymentService.createPayment(paymentRequest))
                 .isInstanceOf(PaymentLimitException.class)
